@@ -1,0 +1,84 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Add Transaction — Expense Tracker{% endblock %}
+{% block content %}
+
+<div class="page-title">Add Transaction</div>
+<div class="page-sub">New income or expense record</div>
+
+<div class="form-card">
+  <form method="post" id="txn-form">
+    {% csrf_token %}
+    <input type="hidden" name="type" id="type-field" value="Income">
+    <div class="type-toggle">
+      <button type="button" class="ttype-btn sel-inc" id="btn-inc" onclick="setType('Income')">↑ Income</button>
+      <button type="button" class="ttype-btn" id="btn-exp" onclick="setType('Expense')">↓ Expense</button>
+    </div>
+
+    <div class="field">
+      <label>Description *</label>
+      <input type="text" name="note" placeholder="e.g. Monthly Salary, Grocery Shopping..." required autofocus>
+    </div>
+
+    <div class="form-grid2">
+      <div class="field">
+        <label>Amount (₹) *</label>
+        <input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required>
+      </div>
+      <div class="field">
+        <label>Date *</label>
+        <input type="date" name="date" value="{{ today }}" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Category *</label>
+      <select name="category" id="cat-select" required>
+        <optgroup label="Income Categories">
+          {% for cat in categories %}{% if cat.type == 'Income' %}
+          <option value="{{ cat.pk }}">{{ cat.icon }} {{ cat.name }}</option>
+          {% endif %}{% endfor %}
+        </optgroup>
+        <optgroup label="Expense Categories">
+          {% for cat in categories %}{% if cat.type == 'Expense' %}
+          <option value="{{ cat.pk }}">{{ cat.icon }} {{ cat.name }}</option>
+          {% endif %}{% endfor %}
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Note (optional)</label>
+      <input type="text" name="extra" placeholder="Additional details...">
+    </div>
+
+    <button type="submit" class="btn-primary" id="submit-btn">+ Add Income</button>
+  </form>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="{% url 'dashboard' %}" style="font-size:13px;color:var(--muted)">← Back to Dashboard</a>
+  </div>
+</div>
+
+<script>
+const incomeCategories = [{% for cat in categories %}{% if cat.type == 'Income' %}'{{ cat.pk }}',{% endif %}{% endfor %}];
+
+function setType(t) {
+  document.getElementById('type-field').value = t;
+  document.getElementById('btn-inc').className = 'ttype-btn' + (t==='Income' ? ' sel-inc' : '');
+  document.getElementById('btn-exp').className = 'ttype-btn' + (t==='Expense' ? ' sel-exp' : '');
+  document.getElementById('submit-btn').textContent = t === 'Income' ? '+ Add Income' : '+ Add Expense';
+  document.getElementById('submit-btn').style.background = t === 'Income' ? 'var(--green-dim)' : 'var(--red-dim)';
+  document.getElementById('submit-btn').style.borderColor = t === 'Income' ? 'var(--green-mid)' : 'var(--red-mid)';
+  document.getElementById('submit-btn').style.color = t === 'Income' ? 'var(--green)' : 'var(--red)';
+
+  // Auto-select first category of that type
+  const sel = document.getElementById('cat-select');
+  const opts = Array.from(sel.options);
+  const grpLabel = t === 'Income' ? 'Income Categories' : 'Expense Categories';
+  for (const opt of opts) {
+    if (opt.parentElement.label === grpLabel) { opt.selected = true; break; }
+  }
+}
+setType('Income');
+</script>
+{% endblock %}

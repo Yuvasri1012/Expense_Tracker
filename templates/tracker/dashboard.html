@@ -1,0 +1,223 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Dashboard — Expense Tracker{% endblock %}
+{% block content %}
+  
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div style="font-size:13px;color:var(--muted)">{{ month_name }} {{ year }}</div>
+  </div>
+  <div class="month-nav">
+    <a href="?year={{ prev_year }}&month={{ prev_month }}">‹</a>
+    <span class="month-label">{{ month_name }} {{ year }}</span>
+    <a href="?year={{ next_year }}&month={{ next_month }}">›</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card inc">
+    <div class="stat-label">Total Income</div>
+    <div class="stat-val c-green">₹{{ total_income|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card exp">
+    <div class="stat-label">Total Expense</div>
+    <div class="stat-val c-red">₹{{ total_expense|floatformat:0 }}</div>
+  </div>
+  <div class="stat-card bal">
+    <div class="stat-label">Net Balance</div>
+    <div class="stat-val {% if balance >= 0 %}c-blue{% else %}c-red{% endif %}">
+      {% if balance < 0 %}−{% endif %}₹{{ balance|floatformat:0 }}
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- RECENT TRANSACTIONS -->
+  <div class="card">
+    <div class="card-title">Recent Transactions ({{ txn_count }} total)</div>
+    {% if recent %}
+    <table class="txn-table">
+      <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
+      <tbody>
+      {% for t in recent %}
+      <tr class="txn-row">
+        <td>
+          <div style="font-weight:600;font-size:13px">{{ t.note }}</div>
+          {% if t.extra %}<div style="font-size:11px;color:var(--muted)">{{ t.extra }}</div>{% endif %}
+        </td>
+        <td>
+          <span class="cat-badge" style="background:{{ t.category.color }}22;color:{{ t.category.color }}">
+            {{ t.category.icon }} {{ t.category.name }}
+          </span>
+        </td>
+        <td class="{% if t.type == 'Income' %}amt-inc{% else %}amt-exp{% endif %}">
+          {% if t.type == 'Income' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:0 }}
+        </td>
+        <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">{{ t.date }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top:12px">
+      <a href="{% url 'transaction_list' %}?year={{ year }}&month={{ month }}" class="filt-btn active" style="font-size:12px">View All →</a>
+    </div>
+    {% else %}
+    <div class="empty"><div class="empty-icon">📭</div>No transactions this month</div>
+    {% endif %}
+  </div>
+
+  <!-- CATEGORY CHART -->
+  <div class="card">
+    <div class="card-title">Expense by Category</div>
+    {% if cat_data %}
+    <!-- Pie Chart (SVG) -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <svg id="pie-svg" width="130" height="130" viewBox="0 0 130 130" style="flex-shrink:0"></svg>
+      <div id="pie-legend" style="flex:1"></div>
+    </div>
+    <!-- Bar Chart -->
+    <div class="card-title" style="margin-top:4px">Amount Breakdown</div>
+    {% for item in cat_data %}
+    <div class="bar-row">
+      <div class="bar-label">{{ item.category__icon }} {{ item.category__name }}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:{{ item.total|floatformat:0 }}px;background:{{ item.category__color }}" data-amt="{{ item.total }}" data-color="{{ item.category__color }}"></div>
+      </div>
+      <div class="bar-val">₹{{ item.total|floatformat:0 }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty"><div class="empty-icon">📊</div>No expense data this month</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SUMMARY ROW -->
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Savings Rate</div>
+    <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:{% if savings_rate >= 20 %}var(--green){% elif savings_rate >= 10 %}var(--amber){% else %}var(--red){% endif %}">
+      {{ savings_rate }}%
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">of income saved this month</div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:{{ savings_rate }}%;background:{% if savings_rate >= 20 %}var(--green){% elif savings_rate >= 10 %}var(--amber){% else %}var(--red){% endif %}"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Add</div>
+    <div style="display:flex;gap:8px;flex-direction:column">
+      <a href="{% url 'add_transaction' %}" style="display:block;padding:10px 16px;background:var(--green-dim);border:1.5px solid var(--green-mid);color:var(--green);border-radius:var(--r-sm);font-size:13px;font-weight:700;text-align:center;transition:all .2s">+ Add Income</a>
+      <a href="{% url 'add_transaction' %}" style="display:block;padding:10px 16px;background:var(--red-dim);border:1.5px solid var(--red-mid);color:var(--red);border-radius:var(--r-sm);font-size:13px;font-weight:700;text-align:center;transition:all .2s">− Add Expense</a>
+    </div>
+  </div>
+</div>
+
+<!-- LINE CHART -->
+<div class="card" style="margin-top:0">
+  <div class="card-title">6-Month Trend</div>
+  <canvas id="line-canvas" height="140" style="width:100%"></canvas>
+</div>
+
+<script>
+// PIE CHART
+const catData = {{ cat_data|safe }};
+const pieSvg = document.getElementById('pie-svg');
+const pieLegend = document.getElementById('pie-legend');
+if (catData && catData.length) {
+  const total = catData.reduce((s, d) => s + parseFloat(d.total), 0);
+  let angle = -Math.PI / 2;
+  const cx = 65, cy = 65, r = 50, gap = 0.04;
+  let paths = '';
+  catData.forEach(d => {
+    const amt = parseFloat(d.total);
+    const slice = (amt / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    angle += slice - gap;
+    const x2 = cx + r * Math.cos(angle), y2 = cy + r * Math.sin(angle);
+    angle += gap;
+    const lg = slice > Math.PI ? 1 : 0;
+    paths += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${lg} 1 ${x2},${y2} Z" fill="${d.category__color}" opacity="0.9"/>`;
+  });
+  paths += `<circle cx="${cx}" cy="${cy}" r="22" fill="#16181F"/>`;
+  paths += `<text x="${cx}" y="${cy+5}" text-anchor="middle" fill="#7A7F94" font-size="9" font-family="DM Mono">TOTAL</text>`;
+  pieSvg.innerHTML = paths;
+
+  pieLegend.innerHTML = catData.slice(0, 5).map(d => {
+    const amt = parseFloat(d.total);
+    const pct = Math.round(amt / total * 100);
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${d.category__color};flex-shrink:0"></div>
+      <div style="font-size:11px;color:var(--muted);flex:1">${d.category__name}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px">₹${Math.round(amt).toLocaleString('en-IN')} <span style="color:var(--faint)">${pct}%</span></div>
+    </div>`;
+  }).join('');
+}
+
+// FIX BAR WIDTHS
+(function() {
+  const fills = document.querySelectorAll('.bar-fill[data-amt]');
+  const amts = Array.from(fills).map(f => parseFloat(f.dataset.amt));
+  const mx = Math.max(...amts, 1);
+  fills.forEach(f => { f.style.width = Math.round(parseFloat(f.dataset.amt) / mx * 100) + '%'; });
+})();
+
+// LINE CHART
+fetch(`/api/chart-data/?year={{ year }}&month={{ month }}`)
+  .then(r => r.json())
+  .then(data => {
+    const canvas = document.getElementById('line-canvas');
+    const W = canvas.parentElement.offsetWidth - 40;
+    canvas.width = W; canvas.height = 140;
+    const ctx = canvas.getContext('2d');
+    const trend = data.trend;
+    if (!trend || !trend.length) return;
+
+    const pad = 48, gW = W - pad * 2, gH = 100;
+    const allVals = trend.flatMap(t => [t.income, t.expense]).filter(v => v > 0);
+    const maxV = allVals.length ? Math.max(...allVals) : 1;
+
+    const getX = i => pad + (i / (trend.length - 1)) * gW;
+    const getY = v => 10 + gH - (v / maxV) * gH;
+
+    // Grid
+    ctx.strokeStyle = '#2A2D38'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = 10 + (gH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
+    }
+
+    // Lines
+    const drawLine = (data, color) => {
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      data.forEach((t, i) => {
+        const x = getX(i), y = getY(t);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      // dots
+      data.forEach((t, i) => {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(getX(i), getY(t), 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#0E0F13';
+        ctx.beginPath(); ctx.arc(getX(i), getY(t), 2, 0, Math.PI * 2); ctx.fill();
+      });
+    };
+
+    drawLine(trend.map(t => t.income), '#4ADE80');
+    drawLine(trend.map(t => t.expense), '#F87171');
+
+    // Labels
+    ctx.fillStyle = '#7A7F94'; ctx.font = '10px DM Mono, monospace'; ctx.textAlign = 'center';
+    trend.forEach((t, i) => { ctx.fillText(t.month, getX(i), 135); });
+
+    // Legend
+    ctx.fillStyle = '#4ADE80'; ctx.beginPath(); ctx.arc(W - 80, 18, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#7A7F94'; ctx.font = '10px DM Mono'; ctx.textAlign = 'left'; ctx.fillText('Income', W - 70, 22);
+    ctx.fillStyle = '#F87171'; ctx.beginPath(); ctx.arc(W - 20, 18, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#7A7F94'; ctx.fillText('Exp', W - 10, 22);
+  });
+</script>
+{% endblock %}
