@@ -90,12 +90,18 @@ def dashboard(request):
     savings_rate = round(float(balance) / float(total_income) * 100, 1) if total_income > 0 else 0.0
 
     # Category breakdown for pie chart
-    cat_data = (
-        txns.filter(type='Expense')
-        .values('category__name', 'category__color', 'category__icon')
-        .annotate(total=Sum('amount'))
-        .order_by('-total')
-    )
+    cat_data = [
+    {
+        'name': item['category__name'],
+        'icon': item['category__icon'],
+        'color': item['category__color'],
+        'total': float(item['total']),
+    }
+    for item in txns.filter(type='Expense')
+    .values('category__name', 'category__color', 'category__icon')
+    .annotate(total=Sum('amount'))
+    .order_by('-total')
+]
 
     # Month navigation
     import calendar

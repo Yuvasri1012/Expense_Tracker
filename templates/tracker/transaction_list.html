@@ -1,17 +1,30 @@
-{% extends 'tracker/base.html' %}
-{% block title %}Transactions — Expense Tracker{% endblock %}
-{% block content %}
+{% extends 'tracker/base.html' %} {% block title %}Transactions — Expense Tracker{% endblock %} {% block content %}
 
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+<div
+  style="
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  "
+>
   <div>
     <div class="page-title">Transaction History</div>
-    <div style="font-size:13px;color:var(--muted)">{{ month_name }} {{ year }}</div>
+    <div style="font-size: 13px; color: var(--muted)">
+      {{ month_name }} {{ year }}
+    </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <div class="month-nav" style="margin-bottom:0">
-      <a href="?year={{ prev_year }}&month={{ prev_month }}&type={{ type_filter }}&cat={{ cat_filter }}">‹</a>
+  <div style="display: flex; gap: 8px; align-items: center">
+    <div class="month-nav" style="margin-bottom: 0">
+      <a
+        href="?year={{ prev_year }}&month={{ prev_month }}&type={{ type_filter }}&cat={{ cat_filter }}"
+        >‹</a
+      >
       <span class="month-label">{{ month_name }} {{ year }}</span>
-      <a href="?year={{ next_year }}&month={{ next_month }}&type={{ type_filter }}&cat={{ cat_filter }}">›</a>
+      <a
+        href="?year={{ next_year }}&month={{ next_month }}&type={{ type_filter }}&cat={{ cat_filter }}"
+        >›</a
+      >
     </div>
     <a href="{% url 'add_transaction' %}" class="filt-btn active">+ Add</a>
   </div>
@@ -19,13 +32,33 @@
 
 <!-- FILTERS -->
 <div class="filter-bar">
-  <a class="filt-btn {% if type_filter == 'All' %}active{% endif %}" href="?year={{ year }}&month={{ month }}&type=All&cat={{ cat_filter }}">All</a>
-  <a class="filt-btn {% if type_filter == 'Income' %}active{% endif %}" href="?year={{ year }}&month={{ month }}&type=Income&cat={{ cat_filter }}">↑ Income</a>
-  <a class="filt-btn {% if type_filter == 'Expense' %}active{% endif %}" href="?year={{ year }}&month={{ month }}&type=Expense&cat={{ cat_filter }}">↓ Expense</a>
-  <span style="color:var(--border);margin:0 4px">|</span>
-  <a class="filt-btn {% if cat_filter == 'All' %}active{% endif %}" href="?year={{ year }}&month={{ month }}&type={{ type_filter }}&cat=All">All Categories</a>
+  <a
+    class="filt-btn {% if type_filter == 'All' %}active{% endif %}"
+    href="?year={{ year }}&month={{ month }}&type=All&cat={{ cat_filter }}"
+    >All</a
+  >
+  <a
+    class="filt-btn {% if type_filter == 'Income' %}active{% endif %}"
+    href="?year={{ year }}&month={{ month }}&type=Income&cat={{ cat_filter }}"
+    >↑ Income</a
+  >
+  <a
+    class="filt-btn {% if type_filter == 'Expense' %}active{% endif %}"
+    href="?year={{ year }}&month={{ month }}&type=Expense&cat={{ cat_filter }}"
+    >↓ Expense</a
+  >
+  <span style="color: var(--border); margin: 0 4px">|</span>
+  <a
+    class="filt-btn {% if cat_filter == 'All' %}active{% endif %}"
+    href="?year={{ year }}&month={{ month }}&type={{ type_filter }}&cat=All"
+    >All Categories</a
+  >
   {% for cat in categories %}
-  <a class="filt-btn {% if cat_filter == cat.name %}active{% endif %}" href="?year={{ year }}&month={{ month }}&type={{ type_filter }}&cat={{ cat.name }}">{{ cat.icon }} {{ cat.name }}</a>
+  <a
+    class="filt-btn {% if cat_filter == cat.name %}active{% endif %}"
+    href="?year={{ year }}&month={{ month }}&type={{ type_filter }}&cat={{ cat.name }}"
+    >{{ cat.icon }} {{ cat.name }}</a
+  >
   {% endfor %}
 </div>
 
@@ -44,40 +77,73 @@
       </tr>
     </thead>
     <tbody>
-    {% for t in txns %}
-    <tr class="txn-row">
-      <td style="color:var(--muted);font-size:11px;font-family:'DM Mono',monospace">{{ forloop.counter }}</td>
-      <td>
-        <div style="font-weight:600">{{ t.note }}</div>
-        {% if t.extra %}<div style="font-size:11px;color:var(--muted)">{{ t.extra }}</div>{% endif %}
-      </td>
-      <td>
-        <span class="cat-badge" style="background:{{ t.category.color }}22;color:{{ t.category.color }}">
-          {{ t.category.icon }} {{ t.category.name }}
-        </span>
-      </td>
-      <td>
-        <span style="font-size:11px;font-weight:700;color:{% if t.type == 'Income' %}var(--green){% else %}var(--red){% endif %}">
-          {{ t.type }}
-        </span>
-      </td>
-      <td class="{% if t.type == 'Income' %}amt-inc{% else %}amt-exp{% endif %}">
-        {% if t.type == 'Income' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:0 }}
-      </td>
-      <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">{{ t.date }}</td>
-      <td>
-        <form method="post" action="{% url 'delete_transaction' t.pk %}" style="margin:0" onsubmit="return confirm('Delete this transaction?')">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button type="submit" class="btn-danger">✕ Delete</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
+      {% for t in txns %}
+      <tr class="txn-row">
+        <td
+          style="
+            color: var(--muted);
+            font-size: 11px;
+            font-family: &quot;DM Mono&quot;, monospace;
+          "
+        >
+          {{ forloop.counter }}
+        </td>
+        <td>
+          <div style="font-weight: 600">{{ t.note }}</div>
+          {% if t.extra %}
+          <div style="font-size: 11px; color: var(--muted)">{{ t.extra }}</div>
+          {% endif %}
+        </td>
+        <td>
+          <span
+            class="cat-badge"
+            style="background:{{ t.category.color }}22;color:{{ t.category.color }}"
+          >
+            {{ t.category.icon }} {{ t.category.name }}
+          </span>
+        </td>
+        <td>
+          <span
+            style="font-size:11px;font-weight:700;color:{% if t.type == 'Income' %}var(--green){% else %}var(--red){% endif %}"
+          >
+            {{ t.type }}
+          </span>
+        </td>
+        <td class="{% if t.type == 'Income' %}amt-inc{% else %}amt-exp{% endif %}">{% if t.type == 'Income' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:0 }}</td>
+        <td
+          style="
+            font-size: 11px;
+            color: var(--muted);
+            font-family: &quot;DM Mono&quot;, monospace;
+          "
+        >
+          {{ t.date }}
+        </td>
+        <td>
+          <form
+            method="post"
+            action="{% url 'delete_transaction' t.pk %}"
+            style="margin: 0"
+            onsubmit="return confirm('Delete this transaction?');"
+          >
+            {% csrf_token %}
+            <input
+              type="hidden"
+              name="next"
+              value="{{ request.get_full_path }}"
+            />
+            <button type="submit" class="btn-danger">✕ Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <div class="empty"><div class="empty-icon">📭</div>No transactions found for this filter</div>
+  <div class="empty">
+    <div class="empty-icon">📭</div>
+    No transactions found for this filter
+  </div>
   {% endif %}
 </div>
 {% endblock %}
