@@ -14,7 +14,6 @@ _pycache_/
 db.sqlite3
 db.sqlite3-journal
 media/
-staticfiles/
 local_settings.py
 # If you use Django migrations but want to ignore compiledpycfilesonly
 # */migrations/_pycache_/
