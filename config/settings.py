@@ -1,14 +1,15 @@
 from pathlib import Path
+import os
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-expense-tracker-secret-key-change-in-production'
-DEBUG = True
+SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-local-dev-key-only')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['*']
-import dj_database_url
-import os
-from dotenv import load_dotenv
-load_dotenv()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,6 +23,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Static files for Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -50,11 +52,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# ─── MySQL Database ────────────────────────────────────────────────────────────
-# Make sure MySQL is running and you have created the database:
-#   CREATE DATABASE expense_tracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-# Update NAME, USER, PASSWORD below to match your MySQL setup.
-# DATABASES = {
+#  DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
 #         'NAME': 'expense_tracker',      
@@ -69,12 +67,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #     }
 # }
 
+
 DATABASES = {
-        "default": dj_database_url.config(
-            default=os.getenv("DATABASE_URL"), 
-            conn_max_age=600, 
-            ssl_require=True 
-        )
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=False  # ✅ MySQL use பண்றதால் False
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -90,7 +89,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 LOGIN_URL = '/login/'
